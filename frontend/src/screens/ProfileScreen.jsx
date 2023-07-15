@@ -1,0 +1,114 @@
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Form, Button, Row, Col, FormGroup, FormLabel } from "react-bootstrap";
+import FormContainer from "../components/FormContainer";
+import { useDispatch, useSelector } from "react-redux";
+import { useUpdateMutation } from "../slices/userApiSlice";
+import { setCredentials } from "../slices/authSlice";
+import { toast } from "react-toastify";
+import Loader from "../components/Loader";
+
+const ProfileScreen = () => {
+  const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const [update, { isLoading, error }] = useUpdateMutation();
+  const { userInfo } = useSelector((state) => state.auth);
+
+  //   useEffect(() => {
+  //     if (userInfo) {
+  //       navigate("/");
+  //     }
+  //   }, [navigate, userInfo]);
+
+  useEffect(() => {
+    setName(userInfo.name);
+    setEmail(userInfo.email);
+  }, [userInfo.setName, userInfo.setEmail]);
+
+  const submitHandler = async (e) => {
+    e.preventDefault();
+    console.log({ email, password, name });
+    try {
+      if (password !== confirmPassword) {
+        toast.error("passwords does not match");
+      } else {
+        const res = await update({
+          _id: userInfo._id,
+          email,
+          password,
+          name,
+        }).unwrap();
+        dispatch(setCredentials({ ...res }));
+        navigate("/");
+        toast.success("profile updated");
+      }
+    } catch (err) {
+      toast.error(err?.data?.message || err.error);
+    }
+  };
+
+  return (
+    <FormContainer>
+      <h1>Update Profile</h1>
+      {isLoading && <Loader />}
+      <Form onSubmit={submitHandler}>
+        <FormGroup className="my-2" controlId="name">
+          <Form.Label>Name </Form.Label>
+          <Form.Control
+            type="text"
+            placeholder="user name"
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+            }}
+          />
+        </FormGroup>
+        <FormGroup className="my-2" controlId="email">
+          <Form.Label>Email </Form.Label>
+          <Form.Control
+            type="email"
+            placeholder="enter email"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+            }}
+          />
+        </FormGroup>
+
+        <FormGroup className="my-2" controlId="password">
+          <Form.Label>Password </Form.Label>
+          <Form.Control
+            type="password"
+            placeholder="enter password"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+            }}
+          />
+        </FormGroup>
+        <FormGroup className="my-2" controlId="cnf-password">
+          <Form.Label>confirm Password </Form.Label>
+          <Form.Control
+            type="password"
+            placeholder="confirm password"
+            value={confirmPassword}
+            onChange={(e) => {
+              setConfirmPassword(e.target.value);
+            }}
+          />
+        </FormGroup>
+        <Button type="submit" variant="primary">
+          Update profile
+        </Button>
+      </Form>
+    </FormContainer>
+  );
+};
+
+export default ProfileScreen;
